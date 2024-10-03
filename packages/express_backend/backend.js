@@ -31,7 +31,12 @@ const users = {
       id: "zap555",
       name: "Dennis",
       job: "Bartender"
-    }
+    },
+    {
+      "id": "qwe123",
+      "job": "Zookeeper",
+      "name": "Cindy"
+    }  
   ]
 };
 
@@ -43,6 +48,50 @@ const findUserByName = (name) => {
 
 const findUserById = (id) =>
   users["users_list"].find((user) => user["id"] === id);
+
+const addUser = (user) => {
+  users["users_list"].push(user);
+  return user;
+};
+
+app.get("/users", (req, res) => {
+    const name = req.query.name;
+    const job = req.query.job;
+    let filterUser = users.users_list;
+
+    if(name){
+        filterUser = filterUser.filter(user => user.name === name);
+    }
+
+    if(job){
+        filterUser = filterUser.filter(user => user.job === job);
+    }
+
+    if(filterUser.length > 0){
+        res.send({users_list: filterUser});
+    }else{
+        res.status(404).send("User not found");
+    }
+});
+
+app.delete("/users/:id", (req, res) => {
+    const id = req.params["id"];
+    const userToDelete = findUserById(id)
+
+    if(userToDelete){
+        const index = users.users_list.indexOf(userToDelete); //get
+        users.users_list.splice(index, 1); //remove user from array
+        res.status(204).send("Successfully deleted");
+    }else{
+        res.status(404).send("User not found");
+    }
+});
+
+app.post("/users", (req, res) => {
+  const userToAdd = req.body;
+  addUser(userToAdd);
+  res.send();
+});
 
 app.get("/users/:id", (req, res) => {
   const id = req.params["id"]; //or req.params.id
