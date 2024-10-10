@@ -7,7 +7,7 @@ function MyApp() {
   <Form handleSubmit={updateList} />;
 
   function postUser(person) {
-    const promise = fetch("Http://localhost:8000/users", {
+    const promise = fetch("http://localhost:8000/users", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -18,29 +18,51 @@ function MyApp() {
     return promise;
   }
 
-  function fetchUsers(){
+  function fetchUsers() {
     const promise = fetch("http://localhost:8000/users");
     return promise;
   }
 
   useEffect(() => {
     fetchUsers()
-            .then((res) => res.json())
-            .then((json) => setCharacters(json["users_list"]))
-            .catch((error) => { console.log(error); });
-  }, [] );
+      .then((res) => res.json())
+      .then((json) => setCharacters(json["users_list"]))
+      .catch((error) => {
+        console.log(error);
+      });
+  }, []);
 
-
-  function removeOneCharacter(index) {
-    const updated = characters.filter((character, i) => {
-      return i !== index;
-    });
-    setCharacters(updated);
+  function removeOneCharacter(userId) {
+    fetch(`http://localhost:8000/users/${userId}`, {
+      method: "DELETE",
+    })
+      .then((res) => {
+        if (res.status === 204) {
+          // Successfully deleted, remove from frontend state
+          setCharacters(characters.filter((user) => user.id !== userId));
+        } else {
+          console.log("Failed to delete user");
+        }
+      })
+      .catch((error) => console.log(error));
   }
 
   function updateList(person) {
-    postUser(person)
-      .then(() => setCharacters([...characters, person]))
+    const newUser = { ...person,
+      id: Math.floor(Math.random() * 10000).toString(),
+    };
+
+    postUser(newUser)
+      .then((res) => {
+        if (res.status === 201) {
+          return res.json();
+        } else {
+          console.error("Failed to insert users");
+        }
+      })
+      .then((newUser) => {
+        setCharacters([...characters, newUser]);
+      })
       .catch((error) => {
         console.log(error);
       });
@@ -52,6 +74,5 @@ function MyApp() {
       <Form handleSubmit={updateList} />
     </div>
   );
-
 }
 export default MyApp;
