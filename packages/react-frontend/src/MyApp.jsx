@@ -39,7 +39,7 @@ function MyApp() {
       .then((res) => {
         if (res.status === 204) {
           // Successfully deleted, remove from frontend state
-          setCharacters(characters.filter((user) => user.id !== userId));
+          setCharacters(characters.filter((user) => user._id !== userId));
         } else {
           console.log("Failed to delete user");
         }
