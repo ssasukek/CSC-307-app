@@ -4,7 +4,6 @@ import Form from "./Form";
 
 function MyApp() {
   const [characters, setCharacters] = useState([]);
-  <Form handleSubmit={updateList} />;
 
   function postUser(person) {
     const promise = fetch("http://localhost:8000/users", {

@@ -2,9 +2,9 @@ import express from "express";
 import cors from "cors";
 
 // mongoose stuff
-import mongoose from "mongoose";
-import userRoutes from "./user.js"
-// import userServices from "./user-services.js";
+// import mongoose from "mongoose";
+// import userRoutes from "./user.js"
+import userServices from "./user-services.js";
 
 const app = express();
 const port = 8000;
@@ -12,10 +12,10 @@ const port = 8000;
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect("mongodb://localhost:27017/users", {
-  useNewUrlParser: true,
-});
-app.use("/users", userRoutes);
+// mongoose.connect("mongodb://localhost:27017/users", {
+//   useNewUrlParser: true,
+// });
+// app.use("/users", userRoutes);
 
 // const users = {
 //   users_list: [
@@ -52,22 +52,17 @@ app.use("/users", userRoutes);
 //   ],
 // };
 
-const findUserByName = (name) => {
-  return users["users_list"].filter((user) => user["name"] === name);
-};
-
-const findUserById = (id) =>
-  users["users_list"].find((user) => user["id"] === id);
-
-const addUser = (user) => {
-  users["users_list"].push(user);
-  return user;
-};
 
 // get all users - filter by name and job
-app.get("/users", async(req, res) => {
+app.get("/users", (req, res) => {
   const name = req.query.name;
   const job = req.query.job;
+
+  userServices
+    .getUsers(name, job)
+    .then((result) => res.send({ users_list: result }))
+    .catch(() => res.status(404).send("User not found"));
+    
   // let filterUser = users["users_list"];
 
   // if (name) {
@@ -84,21 +79,35 @@ app.get("/users", async(req, res) => {
   //   res.status(404).send("User not found");
   // }
 
-  try {
-    const users = await userServices.getUsers(name, job);
-    if (users.length > 0){
-      res.status(200).send({users_list: users});
-    }else{
-      res.status(404).send("No users found");
-    }
-  } catch(error){
-    res.status(500).send("Error fetching users: " + error.message);
-  }
+  // try {
+  //   const users = await userServices.getUsers(name, job);
+  //   if (users.length > 0){
+  //     res.status(200).send({users_list: users});
+  //   }else{
+  //     res.status(404).send("No users found");
+  //   }
+  // } catch(error){
+  //   res.status(500).send("Error fetching users: " + error.message);
+  // }
+
 });
 
 // delete user by ID
-app.delete("/users/:id", async(req, res) => {
-  const id = req.params["id"];
+app.delete("/users/:id", (req, res) => {
+  userServices
+    .findUserbyIdAndDelete(req.params.id)
+    .then((result) => {
+      if (result){
+        res.status(204).send();
+      } else{
+        res.status(404).send("No users found");
+      }
+      
+    })
+    .catch(() => res.status(404).send("No users found"));
+
+  // const id = req.params["id"];
+
   // const userToDelete = findUserById(id);
 
   // if (userToDelete) {
@@ -109,38 +118,53 @@ app.delete("/users/:id", async(req, res) => {
   //   res.status(404).send("User not found");
   // }
 
-  try {
-  const deleteUsers = await userServices.findUserbyIdAndDelete(id);
-  if (deleteUsers){
-    res.status(204).send("User deleted");
-  }else{
-    res.status(404).send("No users found");
-  }
-} catch(error){
-  res.status(500).send("Error fetching users: " + error.message);
-}
+  // try {
+  // const deleteUsers = await userServices.findUserbyIdAndDelete(id);
+  // if (deleteUsers){
+  //   res.status(204).send("User deleted");
+  // }else{
+  //   res.status(404).send("No users found");
+  // }
+  // } catch(error){
+  //   res.status(500).send("Error fetching users: " + error.message);
+  // }
 });
 
 // add a new user
-app.post("/users", async(req, res) => {
+app.post("/users", (req, res) => {
   const userToAdd = req.body;
+  userServices
+    .addUser(userToAdd)
+    .then((userAdded) => res.status(201).send(userAdded))
+    .catch((error) => res.status(500).send("Error fetching users: " + error.message));
 
   // userToAdd.id = Math.floor(Math.random() * 10000).toString();
   // addUser(userToAdd);
   // res.status(201).send(userToAdd);
 
-  try {
-  const newUsers = await userServices.addUser(user);
-  res.status(201).send({new_users_list: newUsers});
-} catch(error){
-  res.status(500).send("Error fetching users: " + error.message);
-}
+//   try {
+//   const newUsers = await userServices.addUser(user);
+//   res.status(201).send({new_users_list: newUsers});
+// } catch(error){
+//   res.status(500).send("Error fetching users: " + error.message);
+// }
 });
 
 
 // get user by ID
-app.get("/users/:id", async(req, res) => {
-  const id = req.params["id"]; //or req.params.id
+app.get("/users/:id", (req, res) => {
+  userServices
+    .findUserById(req.params.id)
+    .then((userAdded) => {
+      if (userAdded){
+        res.send(userAdded);
+      } else{
+        res.status(404).send("User not found");
+      }
+    })
+    .catch(() => res.status(404).send("No users found"));
+
+  // const id = req.params["id"]; //or req.params.id
 
   // let result = findUserById(id);
   // if (result === undefined) {
@@ -149,16 +173,16 @@ app.get("/users/:id", async(req, res) => {
   //   res.send(result);
   // }
 
-  try {
-    const user = await userServices.findUserById(id);
-    if (users.length > 0){
-      res.status(200).send({users_list: users});
-    }else{
-      res.status(404).send("No users found");
-    }
-  } catch(error){
-    res.status(500).send("Error fetching users: " + error.message);
-  }
+  // try {
+  //   const user = await userServices.findUserById(id);
+  //   if (users.length > 0){
+  //     res.status(200).send({users_list: users});
+  //   }else{
+  //     res.status(404).send("No users found");
+  //   }
+  // } catch(error){
+  //   res.status(500).send("Error fetching users: " + error.message);
+  // }
 });
 
 app.listen(port, () => {
